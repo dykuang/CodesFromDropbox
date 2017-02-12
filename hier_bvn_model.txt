@@ -1,0 +1,79 @@
+### Lunn et al. p. 226 has the formulation for this #### 
+
+########### for models on log scale ###################
+
+
+## model for normal:
+#model{ Y ~ dmnorm(mu, R) }
+
+
+### model for normal with prior for mu
+
+
+model { 
+
+for(l in 1:13) {
+for(k in 1:2){
+
+for(i in 1:14) { 
+	Ypool[1,i,k,l] ~ dnorm(mu[1,k,l], prec1[k,l])
+
+ 
+  Ym[i,k,l]<- mu[2,k,l]+(omega[2,k,l]/omega[1,k,l])*rho[k,l]*(Ypool[1,i,k,l]-mu[1,k,l])
+
+        Ypool[2,i,k,l] ~ dnorm(Ym[i,k,l], prec2[k,l])
+}
+}
+}
+
+for(l in 1:13){
+for(k in 1:2){ 
+	prec1[k,l]<-omega[1,k,l]^(-2)    ### marginal precision 
+prec2[k,l]<-( (omega[2,k,l]^2)*(1-rho[k,l]^2) )^(-1) ### conditional precision
+}
+}
+
+
+for(l in 1:13){
+for(k in 1:2) {
+
+sigma[1,2,k,l]<-(rho[k,l]*omega[1,k,l]*omega[2,k,l])
+sigma[2,1,k,l]<-sigma[1,2,k,l]
+
+sigma[1,1,k,l]<-(omega[1,k,l])^2
+sigma[2,2,k,l]<-(omega[2,k,l])^2
+tau[1:2,1:2,k,l]<-inverse(sigma[,,k,l])
+
+
+#################prior specification ############################
+
+omega[1,k,l]~dgamma(a1,b1)    
+omega[2,k,l]~dgamma(a2,b2)
+rho[k,l]~dnorm(mu.rho,sigma.rho)T(-1,1)
+
+mu[1,k,l]~dnorm(mu1.mean,mu1.tau)
+mu[2,k,l]~dnorm(mu2.mean,mu2.tau)
+}
+}
+
+a1~dunif(0,1)
+a2~dunif(0,1)
+b1~dunif(0,1)
+b2~dunif(0,1)
+
+mu.rho~dnorm(.1,.5)
+sigma.rho~dunif(0,3)
+
+mu1.mean~dnorm(0,.1)
+mu2.mean~dnorm(0,.1)
+mu1.tau~dunif(0,5)
+mu2.tau~dunif(0,5)
+
+for( l in 1:13){
+for(k in 1:2){
+
+Ypred[1:2,k,l] ~ dmnorm(mu[1:2,k,l],tau[1:2,1:2,k,l])
+
+}
+}
+}
